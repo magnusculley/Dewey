@@ -3,7 +3,7 @@ import wave
 import numpy as np
 
 # Open WAV file for writing
-wav = wave.open("output.wav", "wb")
+wav = wave.open("../output/app_output.wav", "wb")
 wav.setnchannels(2)        # Stereo, might need to change to 1 for mono
 wav.setsampwidth(2)        # 16-bit PCM
 wav.setframerate(16000)    # 16 kHz
@@ -19,4 +19,4 @@ with ProcessAudioCapture(pid=12345, on_data=on_audio):
     input("Recording... Press Enter to stop.\n")
 
 wav.close()
-print("Saved to output.wav")
+print("Saved to app_output.wav")
