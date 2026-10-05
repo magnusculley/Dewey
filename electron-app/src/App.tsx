@@ -1,33 +1,19 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/electron-vite.animate.svg'
+import RecordingIcon from './assets/recording.svg?react'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+function App() {  
+  const [recording, setRecording] = useState(false)
 
   return (
     <>
-      <div>
-        <a href="https://electron-vite.github.io" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
+      <h1>Dewey</h1>
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+        <button onClick={() => setRecording((recording) => !recording)}>
+          <RecordingIcon width={48} height={48} viewBox="0 0 1024 1024" fill={recording ? 'red' : 'currentColor'} />
+          {recording ? <p>Currently recording!</p> : <p>Click to start recording</p>}
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
