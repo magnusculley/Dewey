@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import psList from 'ps-list'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -66,3 +67,22 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(createWindow)
+
+
+ipcMain.handle('get-running-processes', async () => {
+    try {
+        const processes = await psList();
+
+        // Filter out background processes, sort alphabetically
+        return processes
+            .filter(p => p.name.endsWith('.exe') || !p.name.startsWith('system'))
+            .map(p => ({
+                pid: p.pid,
+                name: p.name,
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        } catch (error) {
+            console.error('Failed to fetch processes:', error);
+            return [];
+    }
+})
