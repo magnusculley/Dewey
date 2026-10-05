@@ -34,6 +34,7 @@ function AudioCaptureSelect() {
 
   return (
     <>
+    Loading: {loading}
       <select>
         <option value="">--Select an audio source--</option>
         {processList.map((p) => (
