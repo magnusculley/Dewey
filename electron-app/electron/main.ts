@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import path from 'node:path'
 
 const require = createRequire(import.meta.url)
@@ -66,3 +68,36 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(createWindow)
+
+const execAsync = promisify(exec)
+
+// Handle calls from the frontend to fetch active PIDs
+ipcMain.handle('get-running-processes', async () => {
+  try {
+    // Run windows tasklist command in CSV format
+    const { stdout } = await execAsync('tasklist /FO CSV /NH');
+    const lines = stdout.trim().split('\r\n');
+    const processMap = new Map<number, string>();
+
+    for (const line of lines) {
+      const parts = line.split('","').map(part => part.replace(/"/g, ''));
+
+      if (parts.length >= 2) {
+        const name = parts[0];
+        const pid = parseInt(parts[1], 10);
+
+        // Omit background system idles and missing entries
+        if (!isNaN(pid) && pid > 4 && name !== 'System Idle Process' && name !== 'System') {
+          processMap.set(pid, name);
+        }
+      }
+    }
+    return Array.from(processMap.entries())
+      .map(([pid, name]) => ({ pid, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+  } catch (error) {
+    console.error('Failed to fetch processes:', error);
+    return [];
+  }
+});

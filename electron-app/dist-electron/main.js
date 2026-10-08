@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { exec } from "child_process";
+import { promisify } from "util";
 import path from "node:path";
 createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
@@ -38,6 +40,28 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(createWindow);
+const execAsync = promisify(exec);
+ipcMain.handle("get-running-processes", async () => {
+  try {
+    const { stdout } = await execAsync("tasklist /FO CSV /NH");
+    const lines = stdout.trim().split("\r\n");
+    const processMap = /* @__PURE__ */ new Map();
+    for (const line of lines) {
+      const parts = line.split('","').map((part) => part.replace(/"/g, ""));
+      if (parts.length >= 2) {
+        const name = parts[0];
+        const pid = parseInt(parts[1], 10);
+        if (!isNaN(pid) && pid > 4 && name !== "System Idle Process" && name !== "System") {
+          processMap.set(pid, name);
+        }
+      }
+    }
+    return Array.from(processMap.entries()).map(([pid, name]) => ({ pid, name })).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.error("Failed to fetch processes:", error);
+    return [];
+  }
+});
 export {
   MAIN_DIST,
   RENDERER_DIST,

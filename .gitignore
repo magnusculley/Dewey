@@ -1,0 +1,5 @@
+.venv
+settings.json
+audio/output/app_output.wav
+audio/output/mic_output.wav
+audio/capture/pidget.py

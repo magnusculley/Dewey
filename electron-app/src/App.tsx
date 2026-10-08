@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState } from 'react'
+import './App.css'
+
 import RecordingIcon from "./assets/recording.svg?react";
-import "./App.css";
 import RecordingTimer from "./RecordingTimer";
+import AudioCaptureSelect from './AudioCaptureSelect';
 
 function App() {
   const [recording, setRecording] = useState(false);
@@ -22,6 +24,9 @@ function App() {
         )}
 
         <RecordingTimer recording={recording} setRecording={setRecording} />
+      </div>
+      <div className="card">
+        <AudioCaptureSelect />
       </div>
     </>
   );
