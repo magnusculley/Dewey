@@ -10,21 +10,18 @@ function App() {
     <>
       <h1>Dewey</h1>
       <div className="card">
-        <button onClick={() => setRecording((recording) => !recording)}>
-          <RecordingIcon
-            width={48}
-            height={48}
-            viewBox="0 0 1024 1024"
-            fill={recording ? "red" : "currentColor"}
-          />
-          {recording ? (
-            <p>Currently recording!</p>
-          ) : (
-            <p>Click to start recording</p>
-          )}
+        <RecordingIcon
+          width="48px"
+          height="48px"
+          fill={recording ? "red" : "currentColor"}
+        />
+        {recording ? (
+          <p>Currently recording!</p>
+        ) : (
+          <p>Click to start recording</p>
+        )}
 
-          <RecordingTimer recording={recording} setRecording={setRecording} />
-        </button>
+        <RecordingTimer recording={recording} setRecording={setRecording} />
       </div>
     </>
   );

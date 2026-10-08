@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 function RecordingTimer({
   recording,
@@ -8,34 +8,43 @@ function RecordingTimer({
   setRecording: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [time, setTime] = useState(0);
+  const startRef = useRef<number | null>(null);
+  const alreadyDoneRef = useRef(0); // How long it ran before paused
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    if (recording) {
-      intervalId = setInterval(() => setTime(time + 1), 10);
-    }
+    if (!recording) return;
+    startRef.current = Date.now();
+    // Compute time elapsed from already done 
+    const intervalId = setInterval(() => {
+      setTime(alreadyDoneRef.current + Date.now() - startRef.current!);
+    }, 200);
 
-    return () => clearInterval(intervalId);
-  }, [recording, time]);
+    return () => {
+      clearInterval(intervalId);
+      alreadyDoneRef.current += Date.now() - startRef.current!;
+      setTime(alreadyDoneRef.current);
+      startRef.current = null;
+    };
+  }, [recording]);
 
-  const hours = Math.floor(time / 360000);
-  const minutes = Math.floor((time % 360000) / 6000);
-  const seconds = Math.floor((time % 6000) / 100);
-  const milliseconds = time % 100;
+  const hours = Math.floor(time / 3600000);
+  const minutes = Math.floor((time % 3600000) / 60000);
+  const seconds = Math.floor((time % 60000) / 1000);
   const startAndStop = () => {
     setRecording(!recording);
   };
 
   const reset = () => {
+    alreadyDoneRef.current = 0;
+    if (startRef.current !== null) startRef.current = Date.now(); // reset while running
     setTime(0);
+    setRecording(false);
   };
 
   return (
     <div className="stopwatch-container">
       <p className="stopwatch-time">
-        {hours}:{minutes.toString().padStart(2, "0")}:
-        {seconds.toString().padStart(2, "0")}:
-        {milliseconds.toString().padStart(2, "0")}
+        {hours}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </p>
       <div className="stopwatch-buttons">
         <button className="stopwatch-button" onClick={startAndStop}>
