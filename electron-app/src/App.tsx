@@ -1,24 +1,35 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from '/electron-vite.animate.svg'
+import { useState } from 'react'
 import './App.css'
-import AudioCaptureSelect from './AudioCaptureSelect'
+
+import RecordingIcon from "./assets/recording.svg?react";
+import RecordingTimer from "./RecordingTimer";
+import AudioCaptureSelect from './AudioCaptureSelect';
 
 function App() {
+  const [recording, setRecording] = useState(false);
 
   return (
     <>
-      <div>
-        <a href="https://electron-vite.github.io" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <h1>Dewey</h1>
+      <div className="card">
+        <RecordingIcon
+          width="48px"
+          height="48px"
+          fill={recording ? "red" : "currentColor"}
+        />
+        {recording ? (
+          <p>Currently recording!</p>
+        ) : (
+          <p>Click to start recording</p>
+        )}
+
+        <RecordingTimer recording={recording} setRecording={setRecording} />
       </div>
-      <h1>Vite + React</h1>
-      <AudioCaptureSelect></AudioCaptureSelect>
+      <div className="card">
+        <AudioCaptureSelect />
+      </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
