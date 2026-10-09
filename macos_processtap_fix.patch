@@ -1,0 +1,39 @@
+diff --git a/Users/emberk/Documents/Documents/College/Fall2026/Dewey/.venv/lib/python3.13/site-packages/proctap/backends/macos_processtap.py.orig b/Users/emberk/Documents/Documents/College/Fall2026/Dewey/.venv/lib/python3.13/site-packages/proctap/backends/macos_processtap.py
+index 251b5c1..befd1ec 100644
+--- a/Users/emberk/Documents/Documents/College/Fall2026/Dewey/.venv/lib/python3.13/site-packages/proctap/backends/macos_processtap.py.orig
++++ b/Users/emberk/Documents/Documents/College/Fall2026/Dewey/.venv/lib/python3.13/site-packages/proctap/backends/macos_processtap.py
+@@ -44,7 +44,7 @@ from .converter import AudioConverter, SampleFormat
+ log = logging.getLogger(__name__)
+ 
+ # The Process Tap negotiates this native format (see helper "Tap format" log).
+-TAP_SAMPLE_RATE = 44100
++TAP_SAMPLE_RATE = 48000
+ TAP_CHANNELS = 2
+ TAP_SAMPLE_WIDTH = 4  # float32
+ _CHUNK_MS = 10
+@@ -180,19 +180,16 @@ class ProcessTapBackend(AudioBackend):
+     def read(self, num_frames: int = 1024) -> bytes:
+         bytes_per_frame = STANDARD_CHANNELS * STANDARD_SAMPLE_WIDTH
+         total = num_frames * bytes_per_frame
+-        result = bytearray(total)
+-        got = 0
+-        while got < total:
++        buf = getattr(self, "_leftover", bytearray())
++        while len(buf) < total:
+             try:
+-                chunk = self._audio_queue.get(timeout=1.0)
+-                n = min(len(chunk), total - got)
+-                result[got:got + n] = chunk[:n]
+-                got += n
++                buf += self._audio_queue.get(timeout=1.0)
+             except queue.Empty:
+                 if not self._running:
+                     break
+-                continue
+-        return bytes(result[:got])
++        out = bytes(buf[:total])
++        self._leftover = buf[total:]
++        return out
+ 
+     def iter_chunks(self):
+         while self._running or not self._audio_queue.empty():
