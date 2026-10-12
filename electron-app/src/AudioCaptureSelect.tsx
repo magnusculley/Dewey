@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import Select from "react-select";
+import "./AudioCaptureSelect.css";
 
 interface SystemProcess {
   pid: number;
@@ -37,14 +39,17 @@ function AudioCaptureSelect() {
   return (
     <>
       Loading: {loading}
-      <select>
-        <option value="">--Select an audio source--</option>
-        {processList.map((p) => (
-          <option value={p.pid}>
-            {p.name} (PID: {p.pid})
-          </option>
-        ))}
-      </select>
+      <Select className="Select"
+        options={processList.map((p) => ({
+          value: p.pid,
+          label: `${p.name} (PID: ${p.pid})`,
+        }))}
+        value={selectedPid ? { value: selectedPid, label: processList.find((p) => p.pid === selectedPid)?.name } : null}
+        onChange={(option) => {
+          if (option) handlePidChange(option.value);
+        }}
+        placeholder="--Select an audio source--"
+      />
       <button>Start</button>
     </>
   );
