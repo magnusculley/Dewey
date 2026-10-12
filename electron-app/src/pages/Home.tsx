@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import Dewey from './assets/Dewey.png';
 import RecordingIcon from "../assets/recording.svg?react";
 import RecordingTimer from "../RecordingTimer";
 import AudioCaptureSelect from "../AudioCaptureSelect";
@@ -12,6 +12,7 @@ function Home() {
   return (
     <>
       <h1>Dewey</h1>
+      <img src={Dewey} alt="Dewey Logo" width="200" />
       <div className="card">
         <RecordingIcon
           width="48px"

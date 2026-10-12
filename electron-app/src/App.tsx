@@ -1,9 +1,4 @@
 import "./App.css";
-
-import RecordingIcon from "./assets/recording.svg?react";
-import RecordingTimer from "./RecordingTimer";
-import AudioCaptureSelect from './AudioCaptureSelect';
-import Dewey from './assets/Dewey.png';
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import TranscriptPage from "./pages/TranscriptPage";
