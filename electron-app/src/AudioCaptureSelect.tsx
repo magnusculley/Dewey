@@ -45,7 +45,6 @@ function AudioCaptureSelect() {
           </option>
         ))}
       </select>
-      <button>Start</button>
     </>
   );
 }
