@@ -1,87 +1,97 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { audioCapture } from 'process-audio-capture';
-import path from 'node:path';
+import { app, BrowserWindow, ipcMain } from "electron";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { spawn, ChildProcess } from "node:child_process";
+import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
-process.env.APP_ROOT = path.join(__dirname, '..')
+process.env.APP_ROOT = path.join(__dirname, "..");
 
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
-export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
+export const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+export const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, "public")
+  : RENDERER_DIST;
 
-let win: BrowserWindow | null
+let win: BrowserWindow | null;
+let pythonProcess: ChildProcess | null = null;
+
+function startFastAPIServer() {
+  const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
+  
+  pythonProcess = spawn("python", [scriptPath]);
+}
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, "preload.mjs"),
     },
-  })
+  });
 
-  // Test active push message to Renderer-process.
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', (new Date).toLocaleString())
-  })
+  win.webContents.on("did-finish-load", () => {
+    win?.webContents.send("main-process-message", new Date().toLocaleString());
+  });
 
   if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL)
+    win.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    // win.loadFile('dist/index.html')
-    win.loadFile(path.join(RENDERER_DIST, 'index.html'))
+    win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-    win = null
-  }
-})
+// 1. Start Python backend and open window on launch
+app.whenReady().then(() => {
+  startFastAPIServer();
+  createWindow();
+});
 
-app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
+// 2. Terminate the Python server when Electron quits to avoid orphaned processes
+app.on("will-quit", () => {
+  if (pythonProcess) {
+    pythonProcess.kill();
+    pythonProcess = null;
+  }
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+    win = null;
+  }
+});
+
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow()
+    createWindow();
   }
-})
+});
 
-app.whenReady().then(createWindow)
+// IPC Handler
+ipcMain.handle("get-running-processes", async () => {
+  //need retried because of race condition between electron and fastapi server booting up
+  const maxRetries = 6;
+  const retryDelayMs = 500;
 
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/audio-pids", {
+        method: "GET",
+      });
 
-// Handle calls from the frontend to fetch active PIDs
-ipcMain.handle('get-running-processes', async () => {
-  try {
-    // Retrieves list of active processes interacting with the audio system
-    const processes = await audioCapture.getProcessList();
-
-    return processes.map((proc: { pid: number; name: string}) => ({
-      pid: proc.pid,
-      name:proc.name,
-    }));
-
-  } catch (error) {
-    console.error('Failed to fetch processes:', error);
-    return [];
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        console.error("FastAPI unreachable after retries:", error);
+        return [];
+      }
+      // Wait before retrying while the server finishes booting
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
   }
 });
