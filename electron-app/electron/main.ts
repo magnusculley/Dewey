@@ -1,25 +1,14 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
 process.env.APP_ROOT = path.join(__dirname, "..");
 
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 export const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
@@ -29,6 +18,13 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
+let pythonProcess: ChildProcess | null = null;
+
+function startFastAPIServer() {
+  const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
+  
+  pythonProcess = spawn("python", [scriptPath]);
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -38,7 +34,6 @@ function createWindow() {
     },
   });
 
-  // Test active push message to Renderer-process.
   win.webContents.on("did-finish-load", () => {
     win?.webContents.send("main-process-message", new Date().toLocaleString());
   });
@@ -46,14 +41,24 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// 1. Start Python backend and open window on launch
+app.whenReady().then(() => {
+  startFastAPIServer();
+  createWindow();
+});
+
+// 2. Terminate the Python server when Electron quits to avoid orphaned processes
+app.on("will-quit", () => {
+  if (pythonProcess) {
+    pythonProcess.kill();
+    pythonProcess = null;
+  }
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -62,65 +67,31 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
-app.whenReady().then(createWindow);
-
-const execAsync = promisify(exec);
-
-// Handle calls from the frontend to fetch active PIDs
+// IPC Handler
 ipcMain.handle("get-running-processes", async () => {
-  try {
-    const isMac = process.platform === "darwin";
+  //need retried because of race condition between electron and fastapi server booting up
+  const maxRetries = 6;
+  const retryDelayMs = 500;
 
-    // Run windows tasklist command in CSV format
-    const { stdout } = isMac
-      ? await execAsync("ps -A -o pid= -o comm=")
-      : await execAsync("tasklist /FO CSV /NH");
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/audio-pids", {
+        method: "GET",
+      });
 
-    const lines = stdout.trim().split(/\r?\n/);
-    const processMap = new Map<number, string>();
-
-    for (const line of lines) {
-      let name: string;
-      let pid: number;
-
-      if (isMac) {
-        // macOS parsing
-        const parts = line.trim().match(/^(\d+)\s+(.+)$/);
-        if (!parts) continue;
-
-        pid = parseInt(parts[1], 10);
-        name = parts[2];
-      } else {
-        // Windows (and Linux?)
-        const parts = line.split('","').map((part) => part.replace(/"/g, ""));
-
-        if (parts.length < 2) continue;
-        name = parts[0];
-        pid = parseInt(parts[1], 10);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        console.error("FastAPI unreachable after retries:", error);
+        return [];
       }
-
-      // Omit background system idles and missing entries
-      if (
-        !isNaN(pid) &&
-        pid > 4 &&
-        name !== "System Idle Process" &&
-        name !== "System"
-      ) {
-        processMap.set(pid, name);
-      }
+      // Wait before retrying while the server finishes booting
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
-    return Array.from(processMap.entries())
-      .map(([pid, name]) => ({ pid, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  } catch (error) {
-    console.error("Failed to fetch processes:", error);
-    return [];
   }
 });
