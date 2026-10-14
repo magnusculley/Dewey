@@ -1,5 +1,4 @@
 import uvicorn
-import comtypes
 from capture import pids_capture
 from fastapi import FastAPI
 
