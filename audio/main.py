@@ -7,12 +7,7 @@ app = FastAPI()
 
 @app.get("/audio-pids")
 def get_audio_pids():
-    #comtypes should be moved to pids.py honestly, it will break mac and linux, but for now it is here to make sure it works on windows
-    comtypes.CoInitialize()
-    try:
-        return pids_capture.get_active_audio_pids_windows()
-    finally:
-        comtypes.CoUninitialize()
+    return pids_capture.get_active_audio_pids_windows()
 
 #has to be guarded and at the end of file
 if __name__ == "__main__":
