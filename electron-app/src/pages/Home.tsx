@@ -4,6 +4,8 @@ import Dewey from '../assets/Dewey.png';
 import RecordingIcon from "../assets/recording.svg?react";
 import RecordingTimer from "../RecordingTimer";
 import AudioCaptureSelect from "../AudioCaptureSelect";
+import "../AudioCaptureSelect.css";
+import "../Home.css";
 
 function Home() {
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ function Home() {
 
         <RecordingTimer recording={recording} setRecording={setRecording} />
       </div>
-      <div className="card">
+      <div className="SelectDiv">
         <AudioCaptureSelect />
       </div>
       <button onClick={() => navigate("/transcript")}>
