@@ -29,15 +29,27 @@ function AudioCaptureSelect() {
     fetchProcesses();
   }, []);
 
-  const handlePidChange = (pid: number) => {
+  const handlePidChange = async (pid: number) => {
     setSelectedPid(pid);
-    // Pass PID to python here
-  };
+    // post selected PID to python backend
+    const response = await fetch("http://127.0.0.1:8000/set-selected-pid", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pid: selectedPid
+      }),
+    });
+    const data = await response.json();
+    console.log("Response from FastAPI:", data);
+  }
 
+  
   return (
     <>
       Loading: {loading}
-      <select>
+      <select onChange={(e) => handlePidChange(Number(e.target.value))}>
         <option value="">--Select an audio source--</option>
         {processList.map((p) => (
           <option value={p.pid}>
