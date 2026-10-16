@@ -95,3 +95,21 @@ ipcMain.handle("get-running-processes", async () => {
     }
   }
 });
+
+ipcMain.handle("set-active-pid", async (event, pid: number) => {
+  try {
+    // Post PID to FastAPI backend to start audio capture
+    const response = await fetch("http://127.0.0.1:8000/set-selected-pid", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pid }),
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error setting active PID:", error);
+    throw error;
+  }
+});
