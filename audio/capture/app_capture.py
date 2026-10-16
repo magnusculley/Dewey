@@ -2,6 +2,11 @@ from proctap import ProcessAudioCapture
 import wave
 import numpy as np
 
+active_pid = 0  # Placeholder for the selected PID, will be set by the user
+
+def set_active_pid(new_pid: int):
+    active_pid = new_pid
+
 # Open WAV file for writing
 wav = wave.open("../output/app_output.wav", "wb")
 wav.setnchannels(2)        # Stereo
@@ -15,7 +20,7 @@ def on_audio(pcm_data: bytes, frame_count: int):
     wav.writeframes(int16_samples.tobytes())
 
 # PID will be input from user later, for now we can use a placeholder value
-with ProcessAudioCapture(pid=21128, on_data=on_audio):
+with ProcessAudioCapture(pid=active_pid, on_data=on_audio):
     input("Recording... Press Enter to stop.\n")
 
 wav.close()
