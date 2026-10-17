@@ -1,7 +1,6 @@
 import uvicorn
 from capture import pids_capture
 from fastapi import FastAPI
-from capture.app_capture import capture_app_audio
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,6 +8,7 @@ class SelectedProcess(BaseModel):
     pid: int
 
 app = FastAPI()
+selected_pid: int | None = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,8 +23,9 @@ def get_audio_pids():
 
 @app.post("/set-selected-pid")
 def set_selected_pid(request: SelectedProcess):
-    capture_app_audio(request.pid)  # blocks until capture ends
-    return {"pid": request.pid, "status": "complete"}
+    global selected_pid
+    selected_pid = request.pid
+    return {"pid": request.pid, "status": "selected"}
 
 #has to be guarded and at the end of file
 if __name__ == "__main__":
