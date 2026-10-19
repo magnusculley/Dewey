@@ -115,3 +115,7 @@ async function sendRecordingCommand(command: string, body: object = {}) {
 ipcMain.handle("start-recording", (_event, pid: number) =>
   sendRecordingCommand("start", { pid }),
 );
+
+ipcMain.handle("pause-recording", () => sendRecordingCommand("pause"));
+ipcMain.handle("stop-recording", () => sendRecordingCommand("stop"));
+ipcMain.handle("save-recording", () => sendRecordingCommand("save"));
