@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/audio-pids")
 def get_audio_pids():
-    return pids_capture.get_active_audio_pids_windows()
+    return pids_capture.get_active_audio_pids()
 
 #has to be guarded and at the end of file
 if __name__ == "__main__":
