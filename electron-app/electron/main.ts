@@ -80,7 +80,7 @@ ipcMain.handle("get-running-processes", async () => {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch("http://127.0.0.1:8000/audio-pids", {
+      const response = await fetch("http://127.0.0.1:8001/audio-pids", {
         method: "GET",
       });
 
@@ -99,7 +99,7 @@ ipcMain.handle("get-running-processes", async () => {
 ipcMain.handle("set-active-pid", async (event, pid: number) => {
   try {
     // Post PID to FastAPI backend to start audio capture
-    const response = await fetch("http://127.0.0.1:8000/set-selected-pid", {
+    const response = await fetch("http://127.0.0.1:8001/set-selected-pid", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
