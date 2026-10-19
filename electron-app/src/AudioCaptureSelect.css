@@ -1,3 +1,4 @@
+@import "tailwindcss";
 .SelectDiv {
   display: flex;
   flex-direction: column;

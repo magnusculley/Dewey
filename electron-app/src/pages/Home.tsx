@@ -10,6 +10,7 @@ import "../Home.css";
 function Home() {
   const navigate = useNavigate();
   const [recording, setRecording] = useState(false);
+  
 
   return (
     <>
