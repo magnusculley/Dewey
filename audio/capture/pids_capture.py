@@ -50,7 +50,7 @@ def get_active_audio_pids_macos():
         output_is_running = get_property(process_object, "piro")[0]
         if output_is_running:
             pid = get_property(process_object, "ppid")[0]
-            name = subprocess.run(["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True).stdout.strip()
+            name = subprocess.run(["ps", "-p", str(pid), "-c", "-o", "comm="], capture_output=True, text=True).stdout.strip() #the '-c' replaces the whole process path with just the application name 
             
             active_processes.append({"pid": pid, "name": name})
     return active_processes
