@@ -4,8 +4,14 @@ import numpy as np
 import os
 
 # AppCapture Class
-# fields: active_pid, wav_file
-# methods: start_capture(), stop_capture(), set_active_pid(pid), __get_output_dir()
+# fields:   active_pid: the ID of the process the user selected to capture from,
+#           wav_file: the WAV file object for writing audio data,
+#           wav_path: the path to the output WAV file,
+#           capture_stream: the ProcessAudioCapture instance
+# methods:  start_capture(): begins writing audio to WAV file,
+#           stop_capture(): stops writing audio to WAV file,
+#           set_active_pid(pid): sets the active process ID,
+#           __get_output_dir(): obtains or creates the output directory path
 
 class AppCapture:
     def __init__(self):
@@ -40,6 +46,7 @@ class AppCapture:
         self.capture_stream.__enter__()
         print(f"Started capturing audio from PID {self.active_pid}. Saving to {self.wav_path}")
 
+    # obtain or create the output directory path
     def __get_output_dir(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         output_dir = os.path.abspath(os.path.join(current_dir, "../output"))
