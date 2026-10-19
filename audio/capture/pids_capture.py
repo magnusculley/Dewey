@@ -1,18 +1,11 @@
-'''
-import comtypes
-from pycaw.pycaw import AudioUtilities
-import platform
-
-
-# change the channels to monochannel for mac
-current_os = platform.system()
-if current_os == "Darwin": # running on macOS
-    pass
-
-def get_active_audio_pids_mac():
-    tapID = AudioObject
+import sys
+import subprocess
 
 def get_active_audio_pids_windows():
+    #windows-specific imports & audio-pid select
+    import comtypes
+    from pycaw.pycaw import AudioUtilities
+
     comtypes.CoInitialize()
     active_processes = []
     seen_pids = set()
@@ -23,23 +16,52 @@ def get_active_audio_pids_windows():
             seen_pids.add(session.ProcessId)
     comtypes.CoUninitialize()
     return active_processes
-'''
-import ctypes, ctypes.util, struct
-from ctypes import c_uint32, byref
 
-ca = ctypes.CDLL(ctypes.util.find_library("CoreAudio"))
-fc = lambda s: struct.unpack(">I", s.encode())[0]
 
-class Addr(ctypes.Structure):
-    _fields_ = [("sel", c_uint32), ("scope", c_uint32), ("elem", c_uint32)]
+def get_active_audio_pids_macos():
+    #mac-specific imports & audio-pid select
+    import ctypes, ctypes.util, struct
+    from ctypes import c_uint32, byref
 
-def prop(obj, sel):
-    a, size = Addr(fc(sel), fc("glob"), 0), c_uint32()
-    ca.AudioObjectGetPropertyDataSize(obj, byref(a), 0, None, byref(size))
-    buf = (c_uint32 * (size.value // 4))()
-    ca.AudioObjectGetPropertyData(obj, byref(a), 0, None, byref(size), buf)
-    return list(buf)
+    # load Apple's CoreAudio library so Python can call its C functions.
+    core_audio = ctypes.CDLL(ctypes.util.find_library("CoreAudio"))
 
-# object 1 = the system object; "prs#" = process list, "ppid" = PID, "piro" = is running output
-pids = [prop(o, "ppid")[0] for o in prop(1, "prs#") if prop(o, "piro")[0]]
-print(pids)
+    def code(four_chars: str) -> int:
+        """Turn a 4-letter Core Audio code like "ppid" into the 32-bit int C expects."""
+        return struct.unpack(">I", four_chars.encode())[0]
+
+    class PropAddress(ctypes.Structure):
+        """Has to have a ctypes structure so that the numbers are laid out in memory as C core audio expects"""
+        _fields_ = [("selector", c_uint32), ("scope", c_uint32), ("elem", c_uint32)]
+
+    def get_property(obj_id, prop_code):
+        addr = PropAddress(code(prop_code), code("glob"), 0)
+        size = c_uint32()
+        core_audio.AudioObjectGetPropertyDataSize(obj_id, byref(addr), 0, None, byref(size)) #gets the amount of bytes the answer takes
+        answer = (c_uint32 * (size.value // 4))() #an empty buffer of a large enough size
+        core_audio.AudioObjectGetPropertyData(obj_id, byref(addr), 0, None, byref(size), answer) #fills the buffer
+        return list(answer)
+
+
+    # 1 = the system object; "prs#" = process list, "ppid" = PID, "piro" = is running output
+    process_objects = get_property(1, "prs#")
+    active_processes = []
+    for process_object in process_objects:
+        output_is_running = get_property(process_object, "piro")[0]
+        if output_is_running:
+            pid = get_property(process_object, "ppid")[0]
+            name = subprocess.run(["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True).stdout.strip()
+            
+            active_processes.append({"pid": pid, "name": name})
+    return active_processes
+
+#select audio-producing pids by os
+def get_active_audio_pids():
+    if sys.platform == "win32":
+        return get_active_audio_pids_windows()
+    elif sys.platform == "darwin":
+        return get_active_audio_pids_macos()
+    else:
+        raise NotImplementedError(f"No audio PID detection for {sys.platform}")
+
+
