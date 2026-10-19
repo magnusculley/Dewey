@@ -23,7 +23,7 @@ let pythonProcess: ChildProcess | null = null;
 function startFastAPIServer() {
   const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
   
-  pythonProcess = spawn("python", [scriptPath]);
+  pythonProcess = spawn("python", [scriptPath], { stdio: "inherit" });
 }
 
 function createWindow() {
@@ -80,7 +80,7 @@ ipcMain.handle("get-running-processes", async () => {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch("http://127.0.0.1:8000/audio-pids", {
+      const response = await fetch("http://127.0.0.1:8001/audio-pids", {
         method: "GET",
       });
 
@@ -119,3 +119,21 @@ ipcMain.handle("start-recording", (_event, pid: number) =>
 ipcMain.handle("pause-recording", () => sendRecordingCommand("pause"));
 ipcMain.handle("stop-recording", () => sendRecordingCommand("stop"));
 ipcMain.handle("save-recording", () => sendRecordingCommand("save"));
+
+ipcMain.handle("set-active-pid", async (event, pid: number) => {
+  try {
+    // Post PID to FastAPI backend to start audio capture
+    const response = await fetch("http://127.0.0.1:8001/set-selected-pid", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pid }),
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error setting active PID:", error);
+    throw error;
+  }
+});
