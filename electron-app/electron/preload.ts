@@ -21,5 +21,6 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
   // You can expose other APTs you need here.
   // ...
-  getRunningProcesses: () => ipcRenderer.invoke('get-running-processes')
+  getRunningProcesses: () => ipcRenderer.invoke('get-running-processes'),
+  setActivePid: (pid: number) => ipcRenderer.invoke('set-active-pid', pid)
 })
