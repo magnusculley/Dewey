@@ -80,7 +80,7 @@ ipcMain.handle("get-running-processes", async () => {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch("http://127.0.0.1:8001/audio-pids", {
+      const response = await fetch("http://127.0.0.1:8000/audio-pids", {
         method: "GET",
       });
 
@@ -96,10 +96,34 @@ ipcMain.handle("get-running-processes", async () => {
   }
 });
 
+async function sendRecordingCommand(command: string, body: object = {}) {
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/recording/${command}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    // If response is okay, return data (or empty if no data), otherwise return error
+    return response.ok ? (data ?? {}) : { error: data.detail };
+  } catch (error) {
+    console.error(`Recording command "${command}" failed:`, error);
+    return { error: "Couldn't reach the audio server" };
+  }
+}
+
+ipcMain.handle("start-recording", (_event, pid: number) =>
+  sendRecordingCommand("start", { pid }),
+);
+
+ipcMain.handle("pause-recording", () => sendRecordingCommand("pause"));
+ipcMain.handle("stop-recording", () => sendRecordingCommand("stop"));
+ipcMain.handle("save-recording", () => sendRecordingCommand("save"));
+
 ipcMain.handle("set-active-pid", async (event, pid: number) => {
   try {
     // Post PID to FastAPI backend to start audio capture
-    const response = await fetch("http://127.0.0.1:8001/set-selected-pid", {
+    const response = await fetch("http://127.0.0.1:8000/set-selected-pid", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
