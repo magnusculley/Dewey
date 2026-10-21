@@ -60,6 +60,6 @@ class MicCapture:
             self.capture_stream.stop()
             self.capture_stream.close()
             self.capture_stream = None
-            if self.wav_file is not None:
-                self.wav_file.close()
-                self.wav_file = None
+        if self.wav_file is not None:
+            self.wav_file.close()
+            self.wav_file = None

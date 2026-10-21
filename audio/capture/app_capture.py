@@ -55,7 +55,6 @@ class AppCapture:
             print(f"Stopped capturing audio from PID {self.active_pid}.")
 
         if self.wav_file is not None:
-            self.capture_stream.stop()
             self.wav_file.close()
             self.wav_file = None
             print("Saved to app_output.wav")
