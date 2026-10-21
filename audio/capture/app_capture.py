@@ -50,6 +50,7 @@ class AppCapture:
 
     def stop_capture(self) -> None:
         if self.wav_file is not None:
+            self.capture_stream.stop()
             self.wav_file.close()
             self.wav_file = None
             print("Saved to app_output.wav")
