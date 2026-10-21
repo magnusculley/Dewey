@@ -14,6 +14,9 @@ function Home() {
 
   return (
     <>
+      <head>
+        <link rel="stylesheet" href="../Home.css" />
+      </head>
       <h1>Dewey</h1>
       <img src={Dewey} alt="Dewey Logo" width="200" />
       <div className="card">
