@@ -2,13 +2,15 @@ import uvicorn
 from capture import pids_capture
 from fastapi import FastAPI
 from pydantic import BaseModel
-from capture.app_capture import AppCapture 
+from capture.app_capture import AppCapture
+from capture.mic_capture import MicCapture
 
 class SelectedProcess(BaseModel):
     pid: int
 
 app = FastAPI()
 app_capture = AppCapture()
+mic_capture = MicCapture()
 selected_pid: int | None = None
 
 
@@ -23,19 +25,18 @@ def set_selected_pid(request: SelectedProcess):
 
 @app.post("/recording/start")
 def start_recording():
-    # try:
-    #     app_capture.start_capture()
-    # except Exception as e:
-    #     pass
+    app_capture.start_capture()
+    mic_capture.start_capture()
     print("Start recording")
-    return {"status": "recording"}#, "pid": app_capture.active_pid*/}
+    return {"status": "recording started"}
 
 
 @app.post("/recording/stop")
 def stop_recording():
-    # app_capture.stop_capture()
+    app_capture.stop_capture()
+    mic_capture.stop_capture()
     print("Stop recording")
-    return {"status": "stopped"}
+    return {"status": "recording stopped"}
 
 #has to be guarded and at the end of file
 if __name__ == "__main__":
