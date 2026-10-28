@@ -61,6 +61,9 @@ def get_active_audio_pids():
         return get_active_audio_pids_windows()
     elif sys.platform == "darwin":
         return get_active_audio_pids_macos()
+    elif sys.platform.startswith("linux"):
+        #not implemented
+        return []
     else:
         raise NotImplementedError(f"No audio PID detection for {sys.platform}")
 
