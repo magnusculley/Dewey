@@ -55,6 +55,37 @@ def get_active_audio_pids_macos():
             active_processes.append({"pid": pid, "name": name})
     return active_processes
 
+def get_active_audio_pids_linux():
+    import re
+    try:
+        output = subprocess.run(
+            ["pactl", "list", "sink-inputs"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return []
+
+    active_processes = []
+    seen_pids = set()
+
+    for sink_input in output.split("Sink Input #")[1:]:
+        name_match = re.search(r'application\.name = "([^"]+)"', sink_input)
+        pid_match = re.search(r'application\.process\.id = "(\d+)"', sink_input)
+
+        if not name_match or not pid_match:
+            continue
+
+        pid = int(pid_match.group(1))
+        if pid in seen_pids:
+            continue
+
+        seen_pids.add(pid)
+        active_processes.append({"pid": pid, "name": name_match.group(1)})
+
+    return active_processes
+
 #select audio-producing pids by os
 def get_active_audio_pids():
     if sys.platform == "win32":
@@ -62,8 +93,7 @@ def get_active_audio_pids():
     elif sys.platform == "darwin":
         return get_active_audio_pids_macos()
     elif sys.platform.startswith("linux"):
-        #not implemented
-        return []
+        return get_active_audio_pids_linux()
     else:
         raise NotImplementedError(f"No audio PID detection for {sys.platform}")
 
