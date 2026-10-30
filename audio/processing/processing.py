@@ -1,6 +1,7 @@
 import whisperx
 import gc
 
+# Example usage to be customized
 device = "cuda" if whisperx.is_available() else "cpu"
 
 audio_file = "audio/processing/audio.mp3" 
