@@ -31,9 +31,6 @@ print(result["segments"]) # after alignment
 # delete model if low on GPU resources
 # import gc; import torch; gc.collect(); torch.cuda.empty_cache(); del model_a
 
-# 3. Assign speaker labels
-diarize_model = DiarizationPipeline(token=YOUR_HF_TOKEN, device=device)
-
 # add min/max number of speakers if known
 diarize_segments = diarize_model(audio)
 # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
