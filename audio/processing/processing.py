@@ -33,9 +33,6 @@ print(result["segments"]) # after alignment
 # import gc; import torch; gc.collect(); torch.cuda.empty_cache(); del model_a
 
 # add min/max number of speakers if known
-diarize_segments = diarize_model(audio)
 # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
 
-result = whisperx.assign_word_speakers(diarize_segments, result)
-print(diarize_segments)
 print(result["segments"]) # segments are now assigned speaker IDs
