@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
+import { readDoc } from "./googleDocs";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +23,7 @@ let pythonProcess: ChildProcess | null = null;
 
 function startFastAPIServer() {
   const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
-  
+
   pythonProcess = spawn("python", [scriptPath], { stdio: "inherit" });
 }
 
@@ -45,10 +46,20 @@ function createWindow() {
   }
 }
 
+//TEST - example doc
+const TEST_DOC_ID = "195j9eDD3ccgjQRttHhJPymLJUCOUjs-jmwTrekvdjFE";
+
 // 1. Start Python backend and open window on launch
 app.whenReady().then(() => {
   startFastAPIServer();
   createWindow();
+  //TEMPORARY TEST of google doc
+  readDoc(TEST_DOC_ID)
+    .then((doc) => {
+      console.log("Title:", doc.title);
+      console.log("First 200 chars:", doc.text.slice(0, 200));
+    })
+    .catch((err) => console.error("Google Docs test failed:", err));
 });
 
 // 2. Terminate the Python server when Electron quits to avoid orphaned processes
@@ -130,10 +141,12 @@ ipcMain.handle("set-active-pid", async (event, pid: number) => {
       },
       body: JSON.stringify({ pid }),
     });
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error setting active PID:", error);
     throw error;
   }
 });
+
+ipcMain.handle("google:readDoc", (_e, id: string) => readDoc(id));

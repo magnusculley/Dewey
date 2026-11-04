@@ -7,7 +7,7 @@ import { app } from "electron";
 const SCOPES = ["https://www.googleapis.com/auth/documents.readonly"];
 
 // The path to the credentials file.
-const CREDENTIALS_PATH = path.join(app.getAppPath(), "..", "credentials.json");
+const CREDENTIALS_PATH = path.join(app.getAppPath(), "credentials.json");
 
 // test to read a doc
 export async function readDoc(documentId: string) {
