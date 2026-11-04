@@ -40,3 +40,70 @@
 .read-the-docs {
   color: #888;
 }
+
+.transcript-page {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  text-align: left;
+}
+
+.transcript-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.transcript-header-label,
+.transcript-file-label {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.transcript-header-label input,
+.transcript-file-label input {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+}
+
+.transcript-content {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #444;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.transcript-content h1 {
+  margin-top: 0;
+  font-size: 2rem;
+}
+
+.transcript-filename,
+.transcript-empty {
+  color: #aaa;
+}
+
+.transcript-lines {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.transcript-line {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #646cff;
+  border-radius: 0 4px 4px 0;
+  background: #2d2d2d;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.transcript-error {
+  color: #ff8a8a;
+}
