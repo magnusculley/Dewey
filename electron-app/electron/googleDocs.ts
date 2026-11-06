@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import { app } from "electron";
 
 //i'll change scope later
-const SCOPES = ["https://www.googleapis.com/auth/documents.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/documents"];
 
 // The path to the credentials file.
 const CREDENTIALS_PATH = path.join(app.getAppPath(), "credentials.json");
@@ -26,4 +26,38 @@ export async function readDoc(documentId: string) {
     .join("");
 
   return { title: data.title, text };
+}
+
+export async function testSuggestToDoc(documentId: string) {
+  const auth = await authenticate({
+    scopes: SCOPES,
+    keyfilePath: CREDENTIALS_PATH,
+  });
+
+  try {
+    const docs = google.docs({ version: "v1", auth: auth as any });
+
+    // send the request
+    console.log(`Inserting suggeestion into document: ${documentId}...`);
+    const response = await docs.documents.batchUpdate({
+      documentId,
+      requestBody: {
+        requests: [
+          {
+            insertText: {
+              text: "IMAGINE a really relevant DnD narration here in this comment.",
+              location: { index: 1 },
+            },
+          },
+        ],
+        writeControl: { writeMode: "SUGGEST" },
+      } as any,
+    });
+
+    console.log("Success!");
+    return response.data;
+  } catch (error) {
+    console.error("Error inserting text", error);
+    throw error;
+  }
 }

@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
-import { readDoc } from "./googleDocs";
+import { testSuggestToDoc } from "./googleDocs";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,19 +47,14 @@ function createWindow() {
 }
 
 //TEST - example doc
-const TEST_DOC_ID = "195j9eDD3ccgjQRttHhJPymLJUCOUjs-jmwTrekvdjFE";
+const TEST_DOC_ID = "1lryo0xag3uaAJz9NTQxNr6V-vDUQ5trqLPq_9Nsik0Q";
 
 // 1. Start Python backend and open window on launch
 app.whenReady().then(() => {
   startFastAPIServer();
   createWindow();
   //TEMPORARY TEST of google doc
-  readDoc(TEST_DOC_ID)
-    .then((doc) => {
-      console.log("Title:", doc.title);
-      console.log("First 200 chars:", doc.text.slice(0, 200));
-    })
-    .catch((err) => console.error("Google Docs test failed:", err));
+  testSuggestToDoc(TEST_DOC_ID);
 });
 
 // 2. Terminate the Python server when Electron quits to avoid orphaned processes
