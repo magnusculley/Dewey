@@ -2,6 +2,10 @@ import path from "node:path";
 import { authenticate } from "@google-cloud/local-auth";
 import { google } from "googleapis";
 import { app } from "electron";
+import type {
+  PreviewBatchUpdateBody,
+  PreviewBatchUpdateResponse,
+} from "../src/google/Docspreviewtypes";
 
 //i'll change scope later
 const SCOPES = ["https://www.googleapis.com/auth/documents"];
@@ -36,26 +40,26 @@ export async function testSuggestToDoc(documentId: string) {
 
   try {
     const docs = google.docs({ version: "v1", auth: auth as any });
-
+    const body: PreviewBatchUpdateBody = {
+      requests: [
+        {
+          insertText: {
+            text: "\nHere's a new comment to be interted at index 3\n...",
+            location: { index: 3 },
+          },
+        },
+      ],
+      writeControl: { writeMode: "SUGGEST" },
+    };
     // send the request
-    console.log(`Inserting suggeestion into document: ${documentId}...`);
+    console.log(`Inserting suggestion into document: ${documentId}...`);
     const response = await docs.documents.batchUpdate({
       documentId,
-      requestBody: {
-        requests: [
-          {
-            insertText: {
-              text: "IMAGINE a really relevant DnD narration here in this comment.",
-              location: { index: 1 },
-            },
-          },
-        ],
-        writeControl: { writeMode: "SUGGEST" },
-      } as any,
+      requestBody: body,
     });
-
     console.log("Success!");
-    return response.data;
+    const data = response.data as PreviewBatchUpdateResponse;
+    return data;
   } catch (error) {
     console.error("Error inserting text", error);
     throw error;

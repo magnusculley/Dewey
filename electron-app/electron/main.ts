@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
-import { testSuggestToDoc } from "./googleDocs";
+import { testSuggestToDoc } from "./testDocs";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
