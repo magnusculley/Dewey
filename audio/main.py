@@ -38,6 +38,12 @@ def stop_recording():
     print("Stop recording")
     return {"status": "recording stopped"}
 
+@app.post("/processing/byok")
+def process_byok(api_key: str):
+    # imagine that its verifying key
+    # it will return the provider and then the front end will show the models to select from in a dropdown
+    return {"status": "API key received", "api_key": api_key}
+
 #has to be guarded and at the end of file
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
