@@ -61,3 +61,10 @@ print(diarize_segments)
 print(result["segments"]) # segments are now assigned speaker IDs
 
 """
+
+from nemo.collections.asr.models import ASRModel
+asr_ast_model = ASRModel.from_pretrained(model_name="nvidia/canary-1b-v2")
+
+output = asr_ast_model.transcribe(['audio/processing/17-530.wav'], source_lang='en', target_lang='en')
+print(output[0].text)
+
