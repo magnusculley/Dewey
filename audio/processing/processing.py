@@ -1,10 +1,14 @@
+"""
+WhisperX: A library for speech recognition, alignment, and speaker diarization.
+
+
 import whisperx
-import gc
+from whisperx.diarize import DiarizationPipeline
 
 # Example usage to be customized
-device = "cuda" if whisperx.is_available() else "cpu"
+device = "cpu"
 
-audio_file = "audio/processing/audio.mp3" 
+audio_file = "audio/processing/17-530.mp3" 
 batch_size = 16 # reduce if low on GPU mem
 compute_type = "float16" # change to "int8" if low on GPU mem (may reduce accuracy)
 
@@ -35,4 +39,25 @@ print(result["segments"]) # after alignment
 # add min/max number of speakers if known
 # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
 
+
+# 2. Align whisper output
+model_a, metadata = whisperx.load_align_model(language_code=result["language"], device=device)
+result = whisperx.align(result["segments"], model_a, metadata, audio, device, return_char_alignments=False)
+
+print(result["segments"]) # after alignment
+
+# delete model if low on GPU resources
+# import gc; import torch; gc.collect(); torch.cuda.empty_cache(); del model_a
+
+# 3. Assign speaker labels
+diarize_model = DiarizationPipeline(token=YOUR_HF_TOKEN, device=device)
+
+# add min/max number of speakers if known
+diarize_segments = diarize_model(audio)
+# diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+
+result = whisperx.assign_word_speakers(diarize_segments, result)
+print(diarize_segments)
 print(result["segments"]) # segments are now assigned speaker IDs
+
+"""
