@@ -32,6 +32,9 @@ function Home() {
       <button onClick={() => navigate("/transcript")}>
         Open Transcript Page (blank for now)
       </button>
+      <button onClick={() => navigate("/api-page")}>
+        Open API Dummy Page (blank for now)
+      </button>
     </>
   );
 }
