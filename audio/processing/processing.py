@@ -1,3 +1,4 @@
+import time
 """
 WhisperX: A library for speech recognition, alignment, and speaker diarization.
 
@@ -63,7 +64,12 @@ print(result["segments"]) # segments are now assigned speaker IDs
 """
 
 from nemo.collections.asr.models import ASRModel
+
+start_time = time.perf_counter()
 asr_ast_model = ASRModel.from_pretrained(model_name="nvidia/canary-1b-v2")
 
 output = asr_ast_model.transcribe(['audio/processing/17-530.wav'], source_lang='en', target_lang='en')
 print(output[0].text)
+
+elapsed_time = time.perf_counter() - start_time
+print(f"Processing completed in {elapsed_time:.2f} seconds")
