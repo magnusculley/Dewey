@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import RecordingIcon from "../assets/recording.svg?react";
 import RecordingTimer from "../RecordingTimer";
 import AudioCaptureSelect from "../AudioCaptureSelect";
+import GoogleConnect from "../GoogleConnect";
 
 function Home() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ function Home() {
       <button onClick={() => navigate("/transcript")}>
         Open Transcript Page (blank for now)
       </button>
+      <GoogleConnect />
     </>
   );
 }

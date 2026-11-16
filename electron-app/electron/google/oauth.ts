@@ -7,7 +7,7 @@ import path from "path";
 const SCOPES = ["https://www.googleapis.com/auth/documents"];
 const TOKEN_PATH = path.join(app.getPath("userData"), "google-token.bin");
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRETE!;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
 //const CREDENTIALS_PATH = path.join(app.getAppPath(), "..", "credentials.json");
 

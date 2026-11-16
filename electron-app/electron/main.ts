@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
 import { testSuggestToDoc } from "./testDocs";
+import { signInWithGoogle, getSavedClient } from "./google/oauth";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -144,4 +145,5 @@ ipcMain.handle("set-active-pid", async (event, pid: number) => {
   }
 });
 
-ipcMain.handle("google:readDoc", (_e, id: string) => readDoc(id));
+ipcMain.handle("google-status", () => getSavedClient() !== null);
+ipcMain.handle("google-connect", async () => await signInWithGoogle());
