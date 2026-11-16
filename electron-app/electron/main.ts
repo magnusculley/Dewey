@@ -23,8 +23,13 @@ let pythonProcess: ChildProcess | null = null;
 
 function startFastAPIServer() {
   const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
+  const audioDir = path.join(process.env.APP_ROOT, "..", "audio");
+  const pythonCommand = process.platform === "win32" ? "python" : "python3";
 
-  pythonProcess = spawn("python", [scriptPath], { stdio: "inherit" });
+  pythonProcess = spawn(pythonCommand, [scriptPath], {
+    stdio: "inherit",
+    cwd: audioDir,
+  });
 }
 
 function createWindow() {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import throbberUrl from "./assets/throbber.gif";
 
 function RecordingTimer({
   recording,
@@ -10,6 +11,7 @@ function RecordingTimer({
   const [time, setTime] = useState(0);
   const startRef = useRef<number | null>(null);
   const alreadyDoneRef = useRef(0); // How long it ran before paused
+  const [isThrobbing, setIsThrobbing] = useState(false);
 
   useEffect(() => {
     if (!recording) return;
@@ -31,12 +33,19 @@ function RecordingTimer({
   const minutes = Math.floor((time % 3600000) / 60000);
   const seconds = Math.floor((time % 60000) / 1000);
   const startAndStop = async () => {
-    const result = await window.ipcRenderer.invoke(recording ? "stop-recording" : "start-recording");
-    if (result.error) {
-      console.error(result.error);
-      return;
+    const isStarting = !recording;
+    if (isStarting) setIsThrobbing(true);
+
+    try {
+      const result = await window.ipcRenderer.invoke(recording ? "stop-recording" : "start-recording");
+      if (result.error) {
+        console.error(result.error);
+        return;
+      }
+      setRecording(!recording);
+    } finally {
+      if (isStarting) setIsThrobbing(false);
     }
-    setRecording(!recording);
   };
 
   const reset = () => {
@@ -48,6 +57,7 @@ function RecordingTimer({
 
   return (
     <div className="stopwatch-container">
+      {isThrobbing && <img src={throbberUrl} alt="" className="stopwatch-throbber throbbing" />}
       <p className="stopwatch-time">
         {hours}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </p>

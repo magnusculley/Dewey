@@ -49,6 +49,11 @@ class AppCapture:
 
 
     def stop_capture(self) -> None:
+        if self.capture_stream is not None:
+            self.capture_stream.__exit__(None, None, None)
+            self.capture_stream = None
+            print(f"Stopped capturing audio from PID {self.active_pid}.")
+
         if self.wav_file is not None:
             self.wav_file.close()
             self.wav_file = None
