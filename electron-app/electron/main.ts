@@ -3,7 +3,6 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
-import { testSuggestToDoc } from "./testDocs";
 import { signInWithGoogle, getSavedClient } from "./google/oauth";
 
 const require = createRequire(import.meta.url);
@@ -47,15 +46,10 @@ function createWindow() {
   }
 }
 
-//TEST - example doc
-const TEST_DOC_ID = "1lryo0xag3uaAJz9NTQxNr6V-vDUQ5trqLPq_9Nsik0Q";
-
 // 1. Start Python backend and open window on launch
 app.whenReady().then(() => {
   startFastAPIServer();
   createWindow();
-  //TEMPORARY TEST of google doc
-  testSuggestToDoc(TEST_DOC_ID);
 });
 
 // 2. Terminate the Python server when Electron quits to avoid orphaned processes
