@@ -4,13 +4,19 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from capture.app_capture import AppCapture
 from capture.mic_capture import MicCapture
+from processing.byok import LLM
 
 class SelectedProcess(BaseModel):
     pid: int
 
+class VerifyApiKeyRequest(BaseModel):
+    provider: str
+    api_key: str
+
 app = FastAPI()
 app_capture = AppCapture()
 mic_capture = MicCapture()
+LLM_instance = LLM()
 selected_pid: int | None = None
 
 
@@ -38,11 +44,11 @@ def stop_recording():
     print("Stop recording")
     return {"status": "recording stopped"}
 
-@app.post("/processing/byok")
-def process_byok(api_key: str):
-    # imagine that its verifying key
-    # it will return the provider and then the front end will show the models to select from in a dropdown
-    return {"status": "API key received", "api_key": api_key}
+@app.post("/processing/verify-api-key")
+def verify_api_key(request: VerifyApiKeyRequest):
+    verified = LLM_instance.set_and_verify_api_key(request.api_key, request.provider)
+    print(verified)
+    return {"verified": verified}
 
 #has to be guarded and at the end of file
 if __name__ == "__main__":

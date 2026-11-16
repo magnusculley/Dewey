@@ -120,7 +120,24 @@ ipcMain.handle("pause-recording", () => sendRecordingCommand("pause"));
 ipcMain.handle("stop-recording", () => sendRecordingCommand("stop"));
 ipcMain.handle("save-recording", () => sendRecordingCommand("save"));
 
-ipcMain.handle("set-active-pid", async (event, pid: number) => {
+ipcMain.handle("verify-api-key", async (_event, provider: string, apiKey: string) => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/processing/verify-api-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, api_key: apiKey }),
+    });
+    if (!response.ok) {
+      throw new Error(`API key verification failed (${response.status}): ${await response.text()}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error verifying API key:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle("set-active-pid", async (_event, pid: number) => {
   try {
     // Post PID to FastAPI backend to start audio capture
     const response = await fetch("http://127.0.0.1:8000/set-selected-pid", {

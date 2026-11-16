@@ -11,7 +11,7 @@ function ApiDummyPage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState("");
 
-  const providers = ["OpenAI", "Anthropic", "Google"];
+  const providers = ["OpenAI", "Anthropic", "Gemini"];
 
   const verifyApiKey = async () => {
     setIsVerifying(true);
@@ -26,8 +26,8 @@ function ApiDummyPage() {
         provider,
         apiKey.trim(),
       );
-
-      if (response !== true) {
+      console.log("API key verification response:", response);
+      if (response.verified !== true) {
         setError("The API key could not be verified.");
         return;
       }
@@ -41,8 +41,8 @@ function ApiDummyPage() {
       setModels(modelResponse);
       setSelectedModel(modelResponse[0] ?? "");
     } catch (verifyError) {
-      console.error("Failed to verify API key or load models:", verifyError);
-      setError("Could not verify the API key or load models.");
+      console.error("Failed to load models:", verifyError);
+      setError("Could not load models.");
     } finally {
       setIsVerifying(false);
     }
