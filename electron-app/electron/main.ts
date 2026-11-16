@@ -152,12 +152,11 @@ ipcMain.handle("get-models", async () => {
   });
 
 ipcMain.handle("set-model", async (_event, model: string) => {
-  console.log("Setting model to:", JSON.stringify({ model: model }));
   try{
     const response = await fetch("http://127.0.0.1:8000/processing/set-model", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: model }),
+      body: JSON.stringify({ model }),
     });
     return await response.json();
   } catch (error) {
