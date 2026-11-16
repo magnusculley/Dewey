@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import throbberUrl from "./assets/throbber.gif";
 
+
 function RecordingTimer({
   recording,
   setRecording,
@@ -15,16 +16,20 @@ function RecordingTimer({
   const [time, setTime] = useState(0);
   const startRef = useRef<number | null>(null);
   const alreadyDoneRef = useRef(0); // How long it ran before paused
+  const transitionRef = useRef(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isThrobbing, setIsThrobbing] = useState(false);
-  
+ 
+
 
   useEffect(() => {
     if (!recording) return;
     startRef.current = Date.now();
-    // Compute time elapsed from already done 
+    // Compute time elapsed from already done
     const intervalId = setInterval(() => {
       setTime(alreadyDoneRef.current + Date.now() - startRef.current!);
     }, 200);
+
 
     return () => {
       clearInterval(intervalId);
@@ -34,12 +39,19 @@ function RecordingTimer({
     };
   }, [recording]);
 
+
   const hours = Math.floor(time / 3600000);
   const minutes = Math.floor((time % 3600000) / 60000);
   const seconds = Math.floor((time % 60000) / 1000);
   const startAndStop = async () => {
+    if (transitionRef.current) return;
+    transitionRef.current = true;
+    setIsTransitioning(true);
+
+
     const isStarting = !recording;
     if (isStarting) setIsThrobbing(true);
+
 
     try {
       const result = await window.ipcRenderer.invoke(recording ? "stop-recording" : "start-recording");
@@ -50,15 +62,18 @@ function RecordingTimer({
       setRecording(!recording);
     } finally {
       if (isStarting) setIsThrobbing(false);
+      transitionRef.current = false;
+      setIsTransitioning(false);
     }
   };
+
 
   const reset = () => {
     alreadyDoneRef.current = 0;
     if (startRef.current !== null) startRef.current = Date.now(); // reset while running
     setTime(0);
-    setRecording(false);
   };
+
 
   return (
     <div className="stopwatch-container">
@@ -67,10 +82,10 @@ function RecordingTimer({
         {hours}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </p>
       <div className="stopwatch-buttons">
-        <button className="stopwatch-button" disabled={!isPidSelected || isLoading} onClick={startAndStop}>
+        <button className="stopwatch-button" disabled={!isPidSelected || isLoading || isTransitioning} onClick={startAndStop}>
           {recording ? "Stop" : "Start"}
         </button>
-        <button className="stopwatch-button" onClick={reset}>
+        <button className="stopwatch-button" disabled={isTransitioning} onClick={reset}>
           Reset
         </button>
       </div>
@@ -78,4 +93,7 @@ function RecordingTimer({
   );
 }
 
+
 export default RecordingTimer;
+
+
