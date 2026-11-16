@@ -50,6 +50,22 @@ def verify_api_key(request: VerifyApiKeyRequest):
     print(verified)
     return {"verified": verified}
 
+@app.get("/processing/get-models")
+def get_models():
+    try:
+        models = LLM_instance.list_models()
+        return models
+    except RuntimeError as e:
+        return {"error": str(e)}
+    
+@app.post("/processing/set-model")
+def set_model(model_name: str):
+    try:
+        LLM_instance.set_model(model_name)
+        return {"status": "model set", "model": model_name}
+    except RuntimeError as e:
+        return {"error": str(e)}
+
 #has to be guarded and at the end of file
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -21,25 +21,23 @@ function ApiDummyPage() {
     setSelectedModel("");
 
     try {
-      const response = await window.ipcRenderer.invoke(
+      const APIresponse = await window.ipcRenderer.invoke(
         "verify-api-key",
         provider,
         apiKey.trim(),
       );
-      console.log("API key verification response:", response);
-      if (response.verified !== true) {
+      console.log("API key verification response:", APIresponse);
+      if (APIresponse.verified !== true) {
         setError("The API key could not be verified.");
         return;
       }
 
       setVerified(true);
-      const modelResponse: unknown = await window.ipcRenderer.invoke("get-models", provider);
-      if (!Array.isArray(modelResponse) || !modelResponse.every((model) => typeof model === "string")) {
-        throw new Error("The model list response must be an array of strings.");
-      }
-
-      setModels(modelResponse);
-      setSelectedModel(modelResponse[0] ?? "");
+      const modelResponse = await window.ipcRenderer.invoke(
+        "get-models"
+      );
+      const modelNames = modelResponse.map((model: { id: string }) => model.id);
+      setModels(modelNames);
     } catch (verifyError) {
       console.error("Failed to load models:", verifyError);
       setError("Could not load models.");
@@ -70,7 +68,9 @@ function ApiDummyPage() {
             onChange={(event) => selectProvider(event.target.value)}
           >
             {providers.map((providerName) => (
-              <option key={providerName} value={providerName}>{providerName}</option>
+              <option key={providerName} value={providerName}>
+                {providerName}
+              </option>
             ))}
           </select>
         </label>
@@ -92,14 +92,25 @@ function ApiDummyPage() {
                 setError("");
               }}
             />
-            <button type="button" onClick={() => void verifyApiKey()} disabled={!apiKey.trim() || isVerifying}>
+            <button
+              type="button"
+              onClick={() => void verifyApiKey()}
+              disabled={!apiKey.trim() || isVerifying}
+            >
               {isVerifying ? "Verifying..." : "Verify key"}
             </button>
           </div>
-          <span className={`api-key-status${verified ? " is-verified" : ""}`} role="status">
+          <span
+            className={`api-key-status${verified ? " is-verified" : ""}`}
+            role="status"
+          >
             {verified ? "Key verified" : "Key has not been verified"}
           </span>
-          {error && <span className="api-key-error" role="alert">{error}</span>}
+          {error && (
+            <span className="api-key-error" role="alert">
+              {error}
+            </span>
+          )}
         </div>
 
         <label className="api-field" htmlFor="api-model">
@@ -107,17 +118,23 @@ function ApiDummyPage() {
           <select
             id="api-model"
             value={selectedModel}
-            onChange={(event) => setSelectedModel(event.target.value)}
+            onChange={async (event) => {
+              const model = event.target.value;
+              setSelectedModel(model);
+              await window.ipcRenderer.invoke("set-model", model);
+            }}
             disabled={!verified}
           >
             {!verified && <option value="">Verify your API key first</option>}
-            {verified && models.map((model) => (
-              <option key={model} value={model}>{model}</option>
-            ))}
+            {verified &&
+              models.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
           </select>
         </label>
       </section>
-
     </main>
   );
 }

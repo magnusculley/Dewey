@@ -44,11 +44,14 @@ class LLM:
     def list_models(self):
         if self.client is None:
             raise RuntimeError("API key has not been configured.")
-        models = self.client.list_models()
+        try:
+            models = self.client.list_models()
+            print(models[0].id)
+        except Exception as e:
+            raise RuntimeError(f"Error listing models: {e}")        
         return models
 
     def set_model(self, model_name: str):
         if self.client is None:
             raise RuntimeError("API key has not been configured.")
-        self.client.set_model(model_name)
         self.model = model_name

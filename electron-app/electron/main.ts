@@ -137,6 +137,35 @@ ipcMain.handle("verify-api-key", async (_event, provider: string, apiKey: string
   }
 });
 
+
+
+ipcMain.handle("get-models", async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/processing/get-models", {
+        method: "GET",
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching models:", error);
+      throw error;
+    }
+  });
+
+ipcMain.handle("set-model", async (_event, model: string) => {
+  console.log("Setting model to:", JSON.stringify({ model: model }));
+  try{
+    const response = await fetch("http://127.0.0.1:8000/processing/set-model", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: model }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error setting model:", error);
+    throw error;
+  }
+});
+
 ipcMain.handle("set-active-pid", async (_event, pid: number) => {
   try {
     // Post PID to FastAPI backend to start audio capture
