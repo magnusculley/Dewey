@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
+import { signInWithGoogle, getSavedClient } from "./google/oauth";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -135,10 +136,13 @@ ipcMain.handle("set-active-pid", async (event, pid: number) => {
       },
       body: JSON.stringify({ pid }),
     });
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error setting active PID:", error);
     throw error;
   }
 });
+
+ipcMain.handle("google-status", () => getSavedClient() !== null);
+ipcMain.handle("google-connect", async () => await signInWithGoogle());
