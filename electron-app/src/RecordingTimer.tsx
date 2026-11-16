@@ -4,14 +4,19 @@ import throbberUrl from "./assets/throbber.gif";
 function RecordingTimer({
   recording,
   setRecording,
+  isPidSelected,
+  isLoading
 }: {
   recording: boolean;
   setRecording: React.Dispatch<React.SetStateAction<boolean>>;
+  isPidSelected: boolean;
+  isLoading: boolean;
 }) {
   const [time, setTime] = useState(0);
   const startRef = useRef<number | null>(null);
   const alreadyDoneRef = useRef(0); // How long it ran before paused
   const [isThrobbing, setIsThrobbing] = useState(false);
+  
 
   useEffect(() => {
     if (!recording) return;
@@ -62,7 +67,7 @@ function RecordingTimer({
         {hours}:{minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
       </p>
       <div className="stopwatch-buttons">
-        <button className="stopwatch-button" onClick={startAndStop}>
+        <button className="stopwatch-button" disabled={!isPidSelected || isLoading} onClick={startAndStop}>
           {recording ? "Stop" : "Start"}
         </button>
         <button className="stopwatch-button" onClick={reset}>
