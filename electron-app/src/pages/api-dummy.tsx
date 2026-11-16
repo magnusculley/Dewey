@@ -7,23 +7,54 @@ function ApiDummyPage() {
   const [apiKey, setApiKey] = useState("");
   const [verified, setVerified] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
+  const [models, setModels] = useState<string[]>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState("");
 
-  const modelsByProvider: Record<string, string[]> = {
-    OpenAI: ["gpt-3.5-turbo", "gpt-4"],
+  const providers = ["OpenAI", "Anthropic", "Google"];
+
+  const verifyApiKey = async () => {
+    setIsVerifying(true);
+    setError("");
+    setVerified(false);
+    setModels([]);
+    setSelectedModel("");
+
+    try {
+      const response = await window.ipcRenderer.invoke(
+        "verify-api-key",
+        provider,
+        apiKey.trim(),
+      );
+
+      if (response !== true) {
+        setError("The API key could not be verified.");
+        return;
+      }
+
+      setVerified(true);
+      const modelResponse: unknown = await window.ipcRenderer.invoke("get-models", provider);
+      if (!Array.isArray(modelResponse) || !modelResponse.every((model) => typeof model === "string")) {
+        throw new Error("The model list response must be an array of strings.");
+      }
+
+      setModels(modelResponse);
+      setSelectedModel(modelResponse[0] ?? "");
+    } catch (verifyError) {
+      console.error("Failed to verify API key or load models:", verifyError);
+      setError("Could not verify the API key or load models.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const selectProvider = (nextProvider: string) => {
     setProvider(nextProvider);
     setApiKey("");
     setVerified(false);
+    setModels([]);
     setSelectedModel("");
-  };
-
-  const verifyApiKey = () => {
-    if (apiKey.trim()) {
-      setVerified(true);
-      setSelectedModel(modelsByProvider[provider][0]);
-    }
+    setError("");
   };
 
   return (
@@ -38,7 +69,7 @@ function ApiDummyPage() {
             value={provider}
             onChange={(event) => selectProvider(event.target.value)}
           >
-            {Object.keys(modelsByProvider).map((providerName) => (
+            {providers.map((providerName) => (
               <option key={providerName} value={providerName}>{providerName}</option>
             ))}
           </select>
@@ -56,16 +87,19 @@ function ApiDummyPage() {
               onChange={(event) => {
                 setApiKey(event.target.value);
                 setVerified(false);
+                setModels([]);
                 setSelectedModel("");
+                setError("");
               }}
             />
-            <button type="button" onClick={verifyApiKey} disabled={!apiKey.trim()}>
-              Verify key
+            <button type="button" onClick={() => void verifyApiKey()} disabled={!apiKey.trim() || isVerifying}>
+              {isVerifying ? "Verifying..." : "Verify key"}
             </button>
           </div>
           <span className={`api-key-status${verified ? " is-verified" : ""}`} role="status">
-            {verified ? "Key verified (demo only)" : "Key has not been verified"}
+            {verified ? "Key verified" : "Key has not been verified"}
           </span>
+          {error && <span className="api-key-error" role="alert">{error}</span>}
         </div>
 
         <label className="api-field" htmlFor="api-model">
@@ -77,7 +111,7 @@ function ApiDummyPage() {
             disabled={!verified}
           >
             {!verified && <option value="">Verify your API key first</option>}
-            {verified && modelsByProvider[provider].map((model) => (
+            {verified && models.map((model) => (
               <option key={model} value={model}>{model}</option>
             ))}
           </select>
