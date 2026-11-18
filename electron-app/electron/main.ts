@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";

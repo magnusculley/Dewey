@@ -4,7 +4,7 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 
-const SCOPES = ["https://www.googleapis.com/auth/documents"];
+const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 const TOKEN_PATH = path.join(app.getPath("userData"), "google-token.bin");
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
@@ -38,6 +38,7 @@ export async function signInWithGoogle() {
   const authURL = client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
+    trigger_onepick: true, //google drive file picker
     scope: SCOPES,
     code_challenge: codeChallenge,
     code_challenge_method: CodeChallengeMethod.S256,
