@@ -84,22 +84,13 @@ class AppCapture:
 
     def stop_capture(self) -> None:
         with self._lifecycle_lock:
-            stream = self.capture_stream
             try:
-                if stream is not None:
-                    stream.__exit__(None, None, None)
+                if self.capture_stream is not None:
+                    self.capture_stream.__exit__(None, None, None)
+                    print(f"Stopped capturing audio from PID {self.active_pid}.")
             finally:
+                # Always close last file
                 self.capture_stream = None
                 with self._wav_file_lock:
-                    wav_file = self.wav_file
-                    self.wav_file = None
-                    if wav_file is not None:
-                        wav_file.close()
-
-            if stream is not None:
-                print(f"Stopped capturing audio from PID {self.active_pid}.")
-            if stream is not None or wav_file is not None:
-                print("Saved to app_output.wav")
-
-            if self.wav_file is not None:
-                self.close_chunk() # the last, shorter chunk
+                    if self.wav_file is not None:
+                        self.close_chunk() # the last, shorter chunk
