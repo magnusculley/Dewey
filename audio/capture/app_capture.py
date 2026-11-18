@@ -2,6 +2,7 @@ from proctap import ProcessAudioCapture
 import wave
 import numpy as np
 import os
+import sys
 import time
 from typing import Callable
 import threading
@@ -10,6 +11,35 @@ import threading
 # AppCapture Class
 # fields: active_pid, wav_file, wav_path, capture_stream, session_dir, chunk_index, frames_in_chunk, chunk_start, sample_rate, on_chunk
 # methods: start_capture(session_dir, chunk_seconds, on_chunk), stop_capture(), set_active_pid(pid)
+
+
+def get_output_sample_rate() -> int:
+    """
+    Function for MacOS compatibility to get the output sample rate
+
+    On Windows and Linux this just defaults to 48kHz
+    """
+    if sys.platform != "darwin":
+        return 48000
+
+    import ctypes, ctypes.util, struct
+    from ctypes import c_uint32, c_double, byref
+
+    core_audio = ctypes.CDLL(ctypes.util.find_library("CoreAudio"))
+
+    class PropAddress(ctypes.Structure):
+        _fields_ = [("selector", c_uint32), ("scope", c_uint32), ("elem", c_uint32)]
+
+    def get_property(obj_id, four_chars: str, answer):
+        selector = struct.unpack(">I", four_chars.encode())[0]
+        addr = PropAddress(selector, struct.unpack(">I", b"glob")[0], 0)
+        size = c_uint32(ctypes.sizeof(answer))
+        core_audio.AudioObjectGetPropertyData(obj_id, byref(addr), 0, None, byref(size), byref(answer))
+        return answer.value
+
+    # 1 = the system object; "dOut" = default output device, "nsrt" = its sample rate
+    output_device = get_property(1, "dOut", c_uint32())
+    return int(get_property(output_device, "nsrt", c_double())) or 48000
 
 
 class AppCapture:
@@ -22,7 +52,7 @@ class AppCapture:
         self.chunk_index: int = 0 # number of the next chunk file
         self.frames_in_chunk: int = 0 # audio frames written to the current file so far
         self.chunk_start: float = 0.0 # clock time when the current file's first audio arrived
-        self.sample_rate: int = 48000 # assumes 48khz
+        self.sample_rate: int = 48000 # sample rate of the current file, read from the output device when it opens
         self.on_chunk: Callable[[str, float], None] | None = None
         self._lifecycle_lock = threading.Lock()
         self._wav_file_lock = threading.Lock()
@@ -50,7 +80,8 @@ class AppCapture:
                 int16_samples = (np.clip(float_samples, -1.0, 1.0) * 32767).astype(np.int16)
 
                 # A chunk file is opened when its first audio arrives, so an app
-                # that never plays leaves no empty file
+                # that never plays leaves no empty file, and each file gets the
+                # sample rate the audio is arriving at right then
                 with self._wav_file_lock:
                     if self.wav_file is None:
                         self.open_chunk()
@@ -68,6 +99,7 @@ class AppCapture:
 
     def open_chunk(self) -> None:
         os.makedirs(self.session_dir, exist_ok=True)
+        self.sample_rate = get_output_sample_rate()
         self.wav_path = os.path.join(self.session_dir, f"app_{self.chunk_index:04d}.wav")
         self.wav_file = wave.open(self.wav_path, "wb")
         self.wav_file.setnchannels(2) # Stereo
