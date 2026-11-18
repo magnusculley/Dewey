@@ -37,6 +37,12 @@ def start_recording():
     session_dir = os.path.join(OUTPUT_DIR, time.strftime("%Y%m%d-%H%M%S"))
     # Mic capture has to start first
     mic_capture.start_capture(session_dir, CHUNK_SECONDS, chunk_queue.enqueue_chunk)
+    try:
+        app_capture.start_capture(session_dir, CHUNK_SECONDS, chunk_queue.enqueue_chunk)
+    except Exception:
+        # Stop mic if app capture fails
+        mic_capture.stop_capture()
+        raise
     print("Start recording")
     return {"status": "recording started"}
 
