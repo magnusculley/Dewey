@@ -1,12 +1,13 @@
 import os
 import platform
+import time
 import wave
 from typing import Callable
 
 import sounddevice as sd
 
 #class MicCapture:
-#fields: current_os, channel_num, sample_rate, wav_file, wav_path, session_dir, chunk_index, frames_in_chunk, on_chunk
+#fields: current_os, channel_num, sample_rate, wav_file, wav_path, session_dir, chunk_index, frames_in_chunk, chunk_start, on_chunk
 #methods: start_capture(session_dir, chunk_seconds, on_chunk), stop_capture
 
 class MicCapture:
@@ -22,9 +23,10 @@ class MicCapture:
         self.session_dir: str = ""
         self.chunk_index: int = 0 # number of the chunk file currently being written
         self.frames_in_chunk: int = 0 # audio frames written to that file so far
-        self.on_chunk: Callable[[str], None] | None = None
+        self.chunk_start: float = 0.0 # clock time when that file's first audio arrived
+        self.on_chunk: Callable[[str, float], None] | None = None
 
-    def start_capture(self, session_dir: str, chunk_seconds: float, on_chunk: Callable[[str], None]) -> None:
+    def start_capture(self, session_dir: str, chunk_seconds: float, on_chunk: Callable[[str, float], None]) -> None:
         if self.capture_stream is not None:
             return
 
@@ -37,6 +39,8 @@ class MicCapture:
         def on_audio(indata, frame_count, time_info, status) -> None:
             if status:
                 print(f"Microphone capture status: {status}")
+            if self.frames_in_chunk == 0:
+                self.chunk_start = time.time() # clock time when this chunk's first audio arrived
             self.wav_file.writeframes(indata.tobytes())
             self.frames_in_chunk += frame_count
             # Once a file has enough seconds of audio, close it, and open the next one
@@ -75,7 +79,7 @@ class MicCapture:
         self.wav_file = None
         self.chunk_index += 1
         if self.frames_in_chunk > 0:
-            self.on_chunk(self.wav_path) # finished file goes to the transcription queue
+            self.on_chunk(self.wav_path, self.chunk_start) # finished file, go to the transcription queue
 
     def stop_capture(self):
         if self.capture_stream is not None:

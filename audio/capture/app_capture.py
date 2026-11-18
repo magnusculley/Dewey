@@ -2,10 +2,11 @@ from proctap import ProcessAudioCapture
 import wave
 import numpy as np
 import os
+import time
 from typing import Callable
 
 # AppCapture Class
-# fields: active_pid, wav_file, wav_path, capture_stream, session_dir, chunk_index, frames_in_chunk, sample_rate, on_chunk
+# fields: active_pid, wav_file, wav_path, capture_stream, session_dir, chunk_index, frames_in_chunk, chunk_start, sample_rate, on_chunk
 # methods: start_capture(session_dir, chunk_seconds, on_chunk), stop_capture(), set_active_pid(pid)
 
 class AppCapture:
@@ -17,14 +18,15 @@ class AppCapture:
         self.session_dir: str = ""
         self.chunk_index: int = 0 # number of the next chunk file
         self.frames_in_chunk: int = 0 # audio frames written to the current file so far
+        self.chunk_start: float = 0.0 # clock time when the current file's first audio arrived
         self.sample_rate: int = 48000 # assumes 48khz
-        self.on_chunk: Callable[[str], None] | None = None
+        self.on_chunk: Callable[[str, float], None] | None = None
 
 
     def set_active_pid(self, pid: int) -> None:
         self.active_pid = pid
 
-    def start_capture(self, session_dir: str, chunk_seconds: float, on_chunk: Callable[[str], None]) -> None:
+    def start_capture(self, session_dir: str, chunk_seconds: float, on_chunk: Callable[[str, float], None]) -> None:
         if self.active_pid is None:
             raise ValueError("Active PID is not set.")
 
@@ -44,6 +46,7 @@ class AppCapture:
             # that never plays leaves no empty file
             if self.wav_file is None:
                 self.open_chunk()
+                self.chunk_start = time.time() # clock time when this chunk's first audio arrived
             self.wav_file.writeframes(int16_samples.tobytes())
             self.frames_in_chunk += len(int16_samples) // 2 # stereo: 2 samples per frame
 
@@ -68,7 +71,7 @@ class AppCapture:
         self.wav_file.close()
         self.wav_file = None
         self.chunk_index += 1
-        self.on_chunk(self.wav_path) # finished file goes to the transcription queue
+        self.on_chunk(self.wav_path, self.chunk_start) # finished file and its start time go to the transcription queue
 
     def stop_capture(self) -> None:
         if self.capture_stream is not None:
