@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
+import { signInWithGoogle, getSavedClient } from "./google/oauth";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,8 +23,13 @@ let pythonProcess: ChildProcess | null = null;
 
 function startFastAPIServer() {
   const scriptPath = path.join(process.env.APP_ROOT, "..", "audio", "main.py");
-  
-  pythonProcess = spawn("python", [scriptPath], { stdio: "inherit" });
+  const audioDir = path.join(process.env.APP_ROOT, "..", "audio");
+  const pythonCommand = process.platform === "win32" ? "python" : "python3";
+
+  pythonProcess = spawn(pythonCommand, [scriptPath], {
+    stdio: "inherit",
+    cwd: audioDir,
+  });
 }
 
 function createWindow() {
@@ -175,10 +181,13 @@ ipcMain.handle("set-active-pid", async (_event, pid: number) => {
       },
       body: JSON.stringify({ pid }),
     });
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error setting active PID:", error);
     throw error;
   }
 });
+
+ipcMain.handle("google-status", () => getSavedClient() !== null);
+ipcMain.handle("google-connect", async () => await signInWithGoogle());
