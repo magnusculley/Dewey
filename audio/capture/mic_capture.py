@@ -1,12 +1,13 @@
 import os
 import platform
 import wave
+from typing import Callable
 
 import sounddevice as sd
 
 #class MicCapture:
-#fields: current_os, channel_num, sample_rate
-#methods: start_capture, stop_capture
+#fields: current_os, channel_num, sample_rate, wav_file, wav_path, session_dir, chunk_index, frames_in_chunk, on_chunk
+#methods: start_capture(session_dir, chunk_seconds, on_chunk), stop_capture
 
 class MicCapture:
     def __init__(self):
@@ -16,26 +17,32 @@ class MicCapture:
             self.channel_num = 1
         self.sample_rate = 16000  # 16kHz
         self.wav_file: wave.Wave_write | None = None
+        self.wav_path: str = ""
         self.capture_stream: sd.InputStream | None = None
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        output_dir = os.path.abspath(os.path.join(current_dir, "../output"))
-        os.makedirs(output_dir, exist_ok=True)
-        self.wav_path = os.path.join(output_dir, "mic_output.wav")
+        self.session_dir: str = ""
+        self.chunk_index: int = 0 # number of the chunk file currently being written
+        self.frames_in_chunk: int = 0 # audio frames written to that file so far
+        self.on_chunk: Callable[[str], None] | None = None
 
-    def start_capture(self) -> None:
+    def start_capture(self, session_dir: str, chunk_seconds: float, on_chunk: Callable[[str], None]) -> None:
         if self.capture_stream is not None:
             return
 
-        wav_file = wave.open(self.wav_path, "wb")
-        wav_file.setnchannels(self.channel_num)
-        wav_file.setsampwidth(2)
-        wav_file.setframerate(self.sample_rate)
-        self.wav_file = wav_file
+        self.session_dir = session_dir
+        self.on_chunk = on_chunk
+        self.chunk_index = 0
+        self.open_chunk()
+        frames_per_chunk = self.sample_rate * chunk_seconds
 
         def on_audio(indata, frame_count, time_info, status) -> None:
             if status:
                 print(f"Microphone capture status: {status}")
-            wav_file.writeframes(indata.tobytes())
+            self.wav_file.writeframes(indata.tobytes())
+            self.frames_in_chunk += frame_count
+            # Once a file has enough seconds of audio, close it, and open the next one
+            if self.frames_in_chunk >= frames_per_chunk:
+                self.close_chunk()
+                self.open_chunk()
 
         stream = None
         try:
@@ -51,9 +58,24 @@ class MicCapture:
             if stream is not None:
                 stream.close()
             self.capture_stream = None
-            wav_file.close()
-            self.wav_file = None
+            self.close_chunk()
             raise
+
+    def open_chunk(self) -> None:
+        os.makedirs(self.session_dir, exist_ok=True)
+        self.wav_path = os.path.join(self.session_dir, f"mic_{self.chunk_index:04d}.wav")
+        self.wav_file = wave.open(self.wav_path, "wb")
+        self.wav_file.setnchannels(self.channel_num)
+        self.wav_file.setsampwidth(2)
+        self.wav_file.setframerate(self.sample_rate)
+        self.frames_in_chunk = 0
+
+    def close_chunk(self) -> None:
+        self.wav_file.close()
+        self.wav_file = None
+        self.chunk_index += 1
+        if self.frames_in_chunk > 0:
+            self.on_chunk(self.wav_path) # finished file goes to the transcription queue
 
     def stop_capture(self):
         if self.capture_stream is not None:
@@ -61,5 +83,4 @@ class MicCapture:
             self.capture_stream.close()
             self.capture_stream = None
         if self.wav_file is not None:
-            self.wav_file.close()
-            self.wav_file = None
+            self.close_chunk() # the last, shorter chunk
