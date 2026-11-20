@@ -4,12 +4,12 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 
-const SCOPES = ["https://www.googleapis.com/auth/documents"];
+const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 const TOKEN_PATH = path.join(app.getPath("userData"), "google-token.bin");
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
-//const CREDENTIALS_PATH = path.join(app.getAppPath(), "..", "credentials.json");
+const FILE_ID_PATH = path.join(app.getPath("userData"), "selected-doc.json");
 
 // checks if user is already signed in when app runs
 export function getSavedClient() {
@@ -38,12 +38,16 @@ export async function signInWithGoogle() {
   const authURL = client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
+    trigger_onepick: true, //google drive file picker
     scope: SCOPES,
     code_challenge: codeChallenge,
     code_challenge_method: CodeChallengeMethod.S256,
   });
 
-  const code = await new Promise<string>((resolve, reject) => {
+  const { code, fileId } = await new Promise<{
+    code: string;
+    fileId: string | null;
+  }>((resolve, reject) => {
     const timeout = setTimeout(
       () => reject(new Error("Sign-in timed out")),
       5 * 60_000,
@@ -62,8 +66,13 @@ export async function signInWithGoogle() {
       if (!code) {
         return res.end();
       }
-      res.end("You are signed in, and may close the tab");
-      resolve(code);
+
+      const fileId = params.get("picked_file_ids") || null;
+
+      res.end(
+        "Your Google Drive file was successfully selected! You may close the tab.",
+      );
+      resolve({ code, fileId });
     });
     shell.openExternal(authURL);
   }).finally(() => server.close());
@@ -75,5 +84,17 @@ export async function signInWithGoogle() {
     TOKEN_PATH,
     safeStorage.encryptString(tokens.refresh_token!),
   );
-  return client;
+  return { client, fileId };
+}
+
+export function saveSelectedFileId(id: string) {
+  fs.writeFileSync(FILE_ID_PATH, JSON.stringify({ id }));
+}
+
+export function getSelectedFileId(): string | null {
+  try {
+    return JSON.parse(fs.readFileSync(FILE_ID_PATH, "utf-8")).id;
+  } catch {
+    return null;
+  }
 }

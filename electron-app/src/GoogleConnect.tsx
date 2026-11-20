@@ -33,8 +33,8 @@ export default function GoogleConnect() {
         {loading
           ? "Waiting for Google…"
           : connected
-            ? "Google account connected"
-            : "Connect your Google account"}
+            ? "Google Doc Saved"
+            : "Select a document from your Google account"}
       </button>
       {error && <p>{error}</p>}
     </div>

@@ -1,9 +1,14 @@
+import "dotenv/config";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { spawn, ChildProcess } from "node:child_process";
 import path from "node:path";
-import { signInWithGoogle, getSavedClient } from "./google/oauth";
+import {
+  signInWithGoogle,
+  getSavedClient,
+  saveSelectedFileId,
+} from "./google/oauth";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -190,4 +195,8 @@ ipcMain.handle("set-active-pid", async (_event, pid: number) => {
 });
 
 ipcMain.handle("google-status", () => getSavedClient() !== null);
-ipcMain.handle("google-connect", async () => await signInWithGoogle());
+ipcMain.handle("google-connect", async () => {
+  const { fileId } = await signInWithGoogle();
+  if (fileId) saveSelectedFileId(fileId);
+  return { fileId };
+});
