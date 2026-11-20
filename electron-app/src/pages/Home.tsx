@@ -27,10 +27,19 @@ function Home() {
           <p>Click to start recording</p>
         )}
 
-        <RecordingTimer recording={recording} setRecording={setRecording} isPidSelected={isPidSelected} isLoading={isLoading} />
+        <RecordingTimer
+          recording={recording}
+          setRecording={setRecording}
+          isPidSelected={isPidSelected}
+          isLoading={isLoading}
+        />
       </div>
       <div className="card">
-        <AudioCaptureSelect setIsPidSelected={setIsPidSelected} setIsLoading={setIsLoading} isLoading={isLoading} />
+        <AudioCaptureSelect
+          setIsPidSelected={setIsPidSelected}
+          setIsLoading={setIsLoading}
+          isLoading={isLoading}
+        />
       </div>
       <button onClick={() => navigate("/transcript")}>
         Open Transcript Page (blank for now)
@@ -38,6 +47,7 @@ function Home() {
       <button onClick={() => navigate("/api-page")}>
         Open API Dummy Page (blank for now)
       </button>
+      <GoogleConnect />
     </>
   );
 }
